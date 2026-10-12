@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #111827;
+    background-color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  code, pre {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Print Styles */
+@page {
+  size: A4 landscape;
+  margin: 10mm 8mm;
+}
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 8pt !important;
+  }
+
+  /* Hide screen-only interactive elements */
+  .no-print,
+  nav,
+  button,
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Show only the print container when printing */
+  .print-only {
+    display: block !important;
+  }
+
+  .print-container {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Table rules for print */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+
+  thead {
+    display: table-header-group !important; /* Repeats headers on each page */
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto;
+  }
+
+  th, td {
+    padding: 4px 6px !important;
+    border: 1px solid #cbd5e1 !important;
+    font-size: 8pt !important;
+  }
+
+  .completed-row {
+    background-color: #d1fae5 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
