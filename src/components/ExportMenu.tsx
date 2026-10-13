@@ -16,6 +16,8 @@ interface ExportMenuProps {
   className?: string;
   /** Which edge the popover aligns to. Defaults to right. */
   align?: 'left' | 'right';
+  /** Extra classes for the wrapping div (e.g. responsive visibility). */
+  containerClassName?: string;
 }
 
 /**
@@ -29,6 +31,7 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({
   title,
   className,
   align = 'right',
+  containerClassName,
 }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -52,7 +55,7 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({
   }, [open]);
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className={`relative${containerClassName ? ` ${containerClassName}` : ''}`} ref={containerRef}>
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}

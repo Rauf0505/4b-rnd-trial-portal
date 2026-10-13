@@ -202,6 +202,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Download Dashboard Overview only */}
             <ExportMenu
               disabled={isDownloading || noMatches}
+              containerClassName="hidden lg:block"
               title={
                 noMatches
                   ? 'No trials match the current filters'
