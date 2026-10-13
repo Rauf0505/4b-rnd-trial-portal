@@ -42,6 +42,7 @@ interface ProductRow {
   unit: string | null;
   replications: number | null;
   applications: number | null;
+  standard: string | null;
 }
 
 interface ObservationRow {
@@ -126,6 +127,7 @@ function mapProduct(row: ProductRow): TrialProduct {
     unit: row.unit ?? '',
     replications: row.replications ?? 3,
     applications: row.applications ?? 1,
+    standard: row.standard ?? '',
   };
 }
 
@@ -190,7 +192,7 @@ export async function fetchTrials(): Promise<Trial[]> {
     const observationDates: Record<number, string> = {};
     const observations: Record<number, ObservationRecord> = {};
     (obsByTrial.get(row.id) ?? []).forEach((obsRow) => {
-      observationDates[obsRow.day] = obsRow.planned_date;
+      observationDates[obsRow.day] = obsRow.planned_date || '';
       observations[obsRow.day] = mapObservation(obsRow);
     });
 
@@ -198,6 +200,15 @@ export async function fetchTrials(): Promise<Trial[]> {
       row.observation_schedule && row.observation_schedule.length > 0
         ? [...row.observation_schedule].sort((a, b) => a - b)
         : getObservationSchedule(row.category, row.insecticide_sub_category);
+
+    // Legacy / partial rows: guarantee the 0 DAA baseline exists and that every
+    // scheduled day has a planned date, so the UI never receives an undefined
+    // observation date.
+    if (!schedule.includes(0)) schedule.unshift(0);
+    const derivedDates = calculateObservationDates(row.conducted_date, schedule);
+    schedule.forEach((day) => {
+      if (!observationDates[day]) observationDates[day] = derivedDates[day];
+    });
 
     return {
       id: row.id,
@@ -261,6 +272,7 @@ function buildProductRows(trialId: string, products: TrialProduct[]) {
     unit: p.unit ?? '',
     replications: Number(p.replications) || 0,
     applications: Number(p.applications) || 0,
+    standard: p.standard ?? '',
   }));
 }
 

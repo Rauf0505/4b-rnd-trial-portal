@@ -16,6 +16,7 @@ interface SeedProduct {
   unit: string;
   replications: number;
   applications: number;
+  standard?: string;
 }
 
 interface SeedInput {
@@ -63,6 +64,7 @@ function createTrial(data: SeedInput): Trial {
   const products: TrialProduct[] = data.products.map((p, index) => ({
     position: index,
     ...p,
+    standard: p.standard ?? 'Untreated Control',
   }));
 
   return {
@@ -138,6 +140,7 @@ export const SEED_TRIALS: Trial[] = [
         unit: 'ml/acre',
         replications: 4,
         applications: 2,
+        standard: 'Emamectin Benzoate 5% SG (Proclaim)',
       },
     ],
     conductedDate: '2026-10-05',
@@ -255,6 +258,7 @@ export const SEED_TRIALS: Trial[] = [
         unit: 'gm/100L water',
         replications: 3,
         applications: 1,
+        standard: 'Confidor 200 SL',
       },
       {
         productName: 'Confidor 200 SL',
@@ -264,6 +268,7 @@ export const SEED_TRIALS: Trial[] = [
         unit: 'ml/acre',
         replications: 3,
         applications: 1,
+        standard: 'Confidor 200 SL',
       },
     ],
     conductedDate: '2026-10-08',

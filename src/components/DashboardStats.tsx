@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trial, Station, STATIONS } from '../types/trial';
 import { isTrialCompleted, isObservationDue } from '../utils/statusLogic';
-import { 
+import {
   FlaskConical, 
   Hourglass, 
   CheckCircle2, 
@@ -12,14 +12,15 @@ import {
   ChevronRight,
   TrendingUp
 } from 'lucide-react';
+import { ExportMenu } from './ExportMenu';
 
 interface DashboardStatsProps {
   trials: Trial[];
   referenceDate: string;
   activeStation: Station | 'All';
   onStationSelect: (station: Station | 'All') => void;
-  onDownloadStationExcel: (station: Station) => void;
-  onPrintStationReport: (station: Station) => void;
+  onDownloadStationExcel: (station: Station, includeStandard: boolean) => void;
+  onPrintStationReport: (station: Station, includeStandard: boolean) => void;
   /** Matching trials per station after the active filters are applied. */
   stationMatchCounts?: Record<Station, number>;
 }
@@ -188,24 +189,52 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
 
                 {/* Actions for this station */}
                 <div className="flex items-center justify-between gap-1.5">
-                  <button
-                    onClick={() => onDownloadStationExcel(item.station)}
-                    disabled={noMatches}
-                    title={noMatches ? `No ${item.station} trials match the current filters` : `Download ${item.station} Excel sheet`}
-                    className="flex-1 flex items-center justify-center space-x-1 px-2 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100/70 hover:bg-emerald-200/80 rounded-lg transition-colors border border-emerald-200 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <FileSpreadsheet className="w-3 h-3 text-emerald-700" />
-                    <span>Excel</span>
-                  </button>
-                  <button
-                    onClick={() => onPrintStationReport(item.station)}
-                    disabled={noMatches}
-                    title={noMatches ? `No ${item.station} trials match the current filters` : `Print ${item.station} Report`}
-                    className="flex-1 flex items-center justify-center space-x-1 px-2 py-1 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <Printer className="w-3 h-3 text-slate-600" />
-                    <span>Print</span>
-                  </button>
+                  <div className="flex-1">
+                    <ExportMenu
+                      disabled={noMatches}
+                      align="left"
+                      title={noMatches ? `No ${item.station} trials match the current filters` : `Download ${item.station} Excel sheet`}
+                      className="w-full flex items-center justify-center space-x-1 px-2 py-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100/70 hover:bg-emerald-200/80 rounded-lg transition-colors border border-emerald-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                      options={[
+                        {
+                          label: 'With Standard column',
+                          description: 'Include the Standard / Check column',
+                          onSelect: () => onDownloadStationExcel(item.station, true),
+                        },
+                        {
+                          label: 'Without Standard column',
+                          description: 'Exclude the Standard / Check column',
+                          onSelect: () => onDownloadStationExcel(item.station, false),
+                        },
+                      ]}
+                    >
+                      <FileSpreadsheet className="w-3 h-3 text-emerald-700" />
+                      <span>Excel</span>
+                    </ExportMenu>
+                  </div>
+                  <div className="flex-1">
+                    <ExportMenu
+                      disabled={noMatches}
+                      align="left"
+                      title={noMatches ? `No ${item.station} trials match the current filters` : `Print ${item.station} Report`}
+                      className="w-full flex items-center justify-center space-x-1 px-2 py-1 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                      options={[
+                        {
+                          label: 'With Standard column',
+                          description: 'Include the Standard / Check column',
+                          onSelect: () => onPrintStationReport(item.station, true),
+                        },
+                        {
+                          label: 'Without Standard column',
+                          description: 'Exclude the Standard / Check column',
+                          onSelect: () => onPrintStationReport(item.station, false),
+                        },
+                      ]}
+                    >
+                      <Printer className="w-3 h-3 text-slate-600" />
+                      <span>Print</span>
+                    </ExportMenu>
+                  </div>
                 </div>
               </div>
             );

@@ -31,7 +31,7 @@ export const INSECTICIDE_SUB_CATEGORIES: InsecticideSubCategory[] = ['Foliar', '
  * offset used anywhere in the system is kept here for rendering table /
  * Excel columns that must line up across categories.
  */
-export const ALL_OBSERVATION_DAYS: number[] = [1, 3, 7, 10, 12, 14, 21, 28];
+export const ALL_OBSERVATION_DAYS: number[] = [0, 1, 3, 7, 10, 12, 14, 21, 28];
 
 export type ObservationDay = number;
 
@@ -53,6 +53,12 @@ export interface TrialProduct {
   unit: string;
   replications: number;
   applications: number;
+  /**
+   * Optional standard / check reference against which this product is
+   * compared. Free text per product — products may share the same value or
+   * each carry their own.
+   */
+  standard: string;
 }
 
 export interface ObservationRecord {

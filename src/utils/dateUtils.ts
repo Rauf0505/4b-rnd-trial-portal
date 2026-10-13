@@ -51,8 +51,10 @@ export function calculateObservationDates(
 
 /**
  * Checks if a given date string (YYYY-MM-DD) is in the past or today relative to referenceDate
+ * Tolerates missing/invalid input (returns false) so partial data can't crash rendering.
  */
-export function isPastOrToday(dateStr: string, referenceDateStr?: string): boolean {
+export function isPastOrToday(dateStr?: string | null, referenceDateStr?: string): boolean {
+  if (!dateStr) return false;
   const target = dateStr.slice(0, 10);
   const ref = referenceDateStr ? referenceDateStr.slice(0, 10) : formatISODate(new Date());
   return target <= ref;
@@ -61,7 +63,8 @@ export function isPastOrToday(dateStr: string, referenceDateStr?: string): boole
 /**
  * Checks if a date string is today
  */
-export function isToday(dateStr: string, referenceDateStr?: string): boolean {
+export function isToday(dateStr?: string | null, referenceDateStr?: string): boolean {
+  if (!dateStr) return false;
   const target = dateStr.slice(0, 10);
   const ref = referenceDateStr ? referenceDateStr.slice(0, 10) : formatISODate(new Date());
   return target === ref;
@@ -70,7 +73,8 @@ export function isToday(dateStr: string, referenceDateStr?: string): boolean {
 /**
  * Difference in days between two ISO dates (target - reference)
  */
-export function daysDifference(targetDateStr: string, referenceDateStr?: string): number {
+export function daysDifference(targetDateStr?: string | null, referenceDateStr?: string): number {
+  if (!targetDateStr) return 0;
   const [ty, tm, td] = targetDateStr.split('-').map(Number);
   const ref = referenceDateStr ? referenceDateStr : formatISODate(new Date());
   const [ry, rm, rd] = ref.split('-').map(Number);

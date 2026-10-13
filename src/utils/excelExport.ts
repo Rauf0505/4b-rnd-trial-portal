@@ -21,7 +21,11 @@ function collectObservationDays(trials: Trial[]): number[] {
 }
 
 /** Build the ordered column config for a station sheet. */
-function buildStationColumns(days: number[], showHarvest: boolean): ColumnConfig[] {
+function buildStationColumns(
+  days: number[],
+  showHarvest: boolean,
+  includeStandard = true
+): ColumnConfig[] {
   const cols: ColumnConfig[] = [
     { header: 'Sr. No.', key: 'srNo', width: 8, align: 'center' },
     { header: 'Station', key: 'station', width: 13 },
@@ -31,6 +35,9 @@ function buildStationColumns(days: number[], showHarvest: boolean): ColumnConfig
     { header: 'Crop', key: 'crop', width: 13, align: 'center' },
     { header: 'Pest / Weed', key: 'pestOrWeed', width: 28 },
     { header: 'Product / Brand', key: 'productName', width: 22 },
+    ...(includeStandard
+      ? [{ header: 'Standard / Check', key: 'standard', width: 22 } as ColumnConfig]
+      : []),
     { header: 'Active Ingredient', key: 'activeIngredient', width: 24 },
     { header: 'Formulation', key: 'formulation', width: 12, align: 'center' },
     { header: 'Dose', key: 'dose', width: 9, align: 'center' },
@@ -185,6 +192,8 @@ function buildRowValues(
         return trial.pestOrWeed;
       case 'productName':
         return product.productName;
+      case 'standard':
+        return product.standard || '-';
       case 'activeIngredient':
         return product.activeIngredient;
       case 'formulation':
@@ -307,7 +316,8 @@ function populateOverviewSheet(
   workbook: ExcelJS.Workbook,
   trials: Trial[],
   currentDateISO: string,
-  filterSummary?: string
+  filterSummary?: string,
+  includeStandard = true
 ): ExcelJS.Worksheet {
   const totalTrials = trials.length;
   const completed = trials.filter((t) => isTrialCompleted(t, currentDateISO)).length;
@@ -323,6 +333,9 @@ function populateOverviewSheet(
     { header: 'Crop', key: 'crop', width: 13, align: 'center' },
     { header: 'Pest / Weed', key: 'pestOrWeed', width: 26 },
     { header: 'Product / Brand', key: 'productName', width: 22 },
+    ...(includeStandard
+      ? [{ header: 'Standard / Check', key: 'standard', width: 22 } as ColumnConfig]
+      : []),
     { header: 'Active Ingredient', key: 'activeIngredient', width: 24 },
     { header: 'Formulation', key: 'formulation', width: 12, align: 'center' },
     { header: 'Dose', key: 'dose', width: 9, align: 'center' },
@@ -386,6 +399,7 @@ function populateOverviewSheet(
       crop: trial.crop,
       pestOrWeed: trial.pestOrWeed,
       productName: product.productName,
+      standard: product.standard || '-',
       activeIngredient: product.activeIngredient,
       formulation: product.formulation,
       dose: String(product.dose ?? ''),
@@ -446,14 +460,15 @@ function populateOverviewSheet(
 export async function downloadCompleteExcel(
   trials: Trial[],
   referenceDateISO?: string,
-  filterSummary?: string
+  filterSummary?: string,
+  includeStandard = true
 ): Promise<void> {
   const refDate = referenceDateISO || formatISODate(new Date());
   const workbook = new ExcelJS.Workbook();
   workbook.creator = REPORT_TITLE;
   workbook.created = new Date();
 
-  populateOverviewSheet(workbook, trials, refDate, filterSummary);
+  populateOverviewSheet(workbook, trials, refDate, filterSummary, includeStandard);
   const filterLine = filterSummarySuffix(filterSummary);
 
   for (const station of STATIONS) {
@@ -463,7 +478,7 @@ export async function downloadCompleteExcel(
 
     const days = collectObservationDays(stationTrials);
     const showHarvest = stationTrials.some((t) => hasHarvestStage(t.category));
-    const columns = buildStationColumns(days, showHarvest);
+    const columns = buildStationColumns(days, showHarvest, includeStandard);
     const rows = flattenToProductRows(stationTrials);
 
     const total = stationTrials.length;
@@ -500,7 +515,8 @@ export async function downloadStationExcel(
   station: Station,
   trials: Trial[],
   referenceDateISO?: string,
-  filterSummary?: string
+  filterSummary?: string,
+  includeStandard = true
 ): Promise<void> {
   const refDate = referenceDateISO || formatISODate(new Date());
   const workbook = new ExcelJS.Workbook();
@@ -510,7 +526,7 @@ export async function downloadStationExcel(
   const stationTrials = trials.filter((t) => t.station === station);
   const days = collectObservationDays(stationTrials);
   const showHarvest = stationTrials.some((t) => hasHarvestStage(t.category));
-  const columns = buildStationColumns(days, showHarvest);
+  const columns = buildStationColumns(days, showHarvest, includeStandard);
   const rows = flattenToProductRows(stationTrials);
 
   const total = stationTrials.length;
@@ -545,14 +561,15 @@ export async function downloadStationExcel(
 export async function downloadOverviewExcel(
   trials: Trial[],
   referenceDateISO?: string,
-  filterSummary?: string
+  filterSummary?: string,
+  includeStandard = true
 ): Promise<void> {
   const refDate = referenceDateISO || formatISODate(new Date());
   const workbook = new ExcelJS.Workbook();
   workbook.creator = REPORT_TITLE;
   workbook.created = new Date();
 
-  populateOverviewSheet(workbook, trials, refDate, filterSummary);
+  populateOverviewSheet(workbook, trials, refDate, filterSummary, includeStandard);
 
   const buffer = await workbook.xlsx.writeBuffer();
   const dateTag = formatDateDisplay(refDate).replace(/-/g, '_');

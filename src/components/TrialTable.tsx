@@ -27,6 +27,8 @@ interface TrialTableProps {
   onEditTrial: (trial: Trial) => void;
   onDeleteTrial: (trial: Trial) => void;
   onOpenObservation: (trial: Trial, day?: number) => void;
+  /** Show the per-product Standard / Check column (defaults to true). */
+  showStandard?: boolean;
 }
 
 export const TrialTable: React.FC<TrialTableProps> = ({
@@ -36,6 +38,7 @@ export const TrialTable: React.FC<TrialTableProps> = ({
   onEditTrial,
   onDeleteTrial,
   onOpenObservation,
+  showStandard = true,
 }) => {
   if (trials.length === 0) {
     return (
@@ -68,6 +71,9 @@ export const TrialTable: React.FC<TrialTableProps> = ({
 
     const plannedDate = trial.observationDates[day];
     const obs = trial.observations[day];
+    if (!plannedDate) {
+      return <span className="text-gray-300 select-none">–</span>;
+    }
     const isDue = isPastOrToday(plannedDate, referenceDate) && !obs?.completed;
 
     if (obs?.completed) {
@@ -129,6 +135,7 @@ export const TrialTable: React.FC<TrialTableProps> = ({
               <th className="py-3 px-3 w-24">Crop</th>
               <th className="py-3 px-3 min-w-[150px]">Pest / Weed</th>
               <th className="py-3 px-3 min-w-[150px]">Product / Brand</th>
+              {showStandard && <th className="py-3 px-3 min-w-[150px]">Standard / Check</th>}
               <th className="py-3 px-3 min-w-[130px]">Active Ingr.</th>
               <th className="py-3 px-3 w-20 text-center">Form.</th>
               <th className="py-3 px-3 w-24 text-center">Dose</th>
@@ -204,6 +211,17 @@ export const TrialTable: React.FC<TrialTableProps> = ({
                   <td className="py-3 px-3 font-bold text-emerald-900 whitespace-nowrap border-r border-gray-50">
                     {product.productName}
                   </td>
+                  {showStandard && (
+                    <td className="py-3 px-3 text-gray-700 whitespace-nowrap border-r border-gray-50">
+                      {product.standard ? (
+                        <span className="inline-block px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 text-[10px] font-semibold">
+                          {product.standard}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">–</span>
+                      )}
+                    </td>
+                  )}
                   <td className="py-3 px-3 text-gray-600 border-r border-gray-50">
                     {product.activeIngredient}
                   </td>

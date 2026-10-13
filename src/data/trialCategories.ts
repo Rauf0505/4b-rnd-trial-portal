@@ -5,14 +5,20 @@ import {
   TrialProductRow,
 } from '../types/trial';
 
+/**
+ * Every schedule starts at 0 DAA — a baseline reading taken on the application
+ * (conducted) date before/at treatment.
+ */
+export const ZERO_DAY = 0;
+
 /** Standard schedule used by Herbicide, Fungicide, Granular insecticide and Fertilizer. */
-export const STANDARD_SCHEDULE: number[] = [3, 7, 14, 21, 28];
+export const STANDARD_SCHEDULE: number[] = [0, 3, 7, 14, 21, 28];
 
 /** Phytotoxicity is monitored more frequently early on. */
-export const PHYTOTOXICITY_SCHEDULE: number[] = [1, 3, 7, 10, 12, 14, 21];
+export const PHYTOTOXICITY_SCHEDULE: number[] = [0, 1, 3, 7, 10, 12, 14, 21];
 
 /** Foliar insecticide gets an extra early 1 DAA reading. */
-export const INSECTICIDE_FOLIAR_SCHEDULE: number[] = [1, 3, 7, 14, 21, 28];
+export const INSECTICIDE_FOLIAR_SCHEDULE: number[] = [0, 1, 3, 7, 14, 21, 28];
 
 /**
  * Resolve the observation day offsets for a category (and insecticide
@@ -78,6 +84,7 @@ export function flattenToProductRows(trials: Trial[]): TrialProductRow[] {
               unit: '',
               replications: 0,
               applications: 0,
+              standard: '',
             } as TrialProductRow['product'],
           ];
     products.forEach((product, index) => {

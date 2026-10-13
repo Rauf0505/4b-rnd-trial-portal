@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Station, STATIONS, UserRole } from '../types/trial';
 import { formatDateDisplay, formatISODate } from '../utils/dateUtils';
 import logoUrl from '../assets/Four Brothers Logo.png';
+import { ExportMenu } from './ExportMenu';
 import { 
   FileSpreadsheet, 
   Printer, 
@@ -21,9 +22,9 @@ interface HeaderProps {
   referenceDate: string;
   onReferenceDateChange: (date: string | null) => void;
   onOpenNewTrialModal: () => void;
-  onDownloadAllExcel: () => void;
-  onDownloadOverviewExcel: () => void;
-  onOpenPrintModal: () => void;
+  onDownloadAllExcel: (includeStandard: boolean) => void;
+  onDownloadOverviewExcel: (includeStandard: boolean) => void;
+  onOpenPrintModal: (includeStandard: boolean) => void;
   isDownloading?: boolean;
   matchCount?: number;
 }
@@ -173,8 +174,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* Download Complete Excel */}
-            <button
-              onClick={onDownloadAllExcel}
+            <ExportMenu
               disabled={isDownloading || noMatches}
               title={
                 noMatches
@@ -182,14 +182,25 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'Download Excel for the current filter results: Dashboard Overview + matching station worksheets'
               }
               className="flex items-center space-x-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 font-semibold text-xs sm:text-sm rounded-xl border border-emerald-700/80 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              options={[
+                {
+                  label: 'With Standard column',
+                  description: 'Include the Standard / Check column',
+                  onSelect: () => onDownloadAllExcel(true),
+                },
+                {
+                  label: 'Without Standard column',
+                  description: 'Exclude the Standard / Check column',
+                  onSelect: () => onDownloadAllExcel(false),
+                },
+              ]}
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
               <span className="hidden md:inline">Download Excel</span>
-            </button>
+            </ExportMenu>
 
             {/* Download Dashboard Overview only */}
-            <button
-              onClick={onDownloadOverviewExcel}
+            <ExportMenu
               disabled={isDownloading || noMatches}
               title={
                 noMatches
@@ -197,20 +208,43 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'Download the Dashboard Overview sheet for the current filter results'
               }
               className="hidden lg:flex items-center space-x-1.5 px-3 py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 font-semibold text-xs sm:text-sm rounded-xl border border-emerald-700/80 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              options={[
+                {
+                  label: 'With Standard column',
+                  description: 'Include the Standard / Check column',
+                  onSelect: () => onDownloadOverviewExcel(true),
+                },
+                {
+                  label: 'Without Standard column',
+                  description: 'Exclude the Standard / Check column',
+                  onSelect: () => onDownloadOverviewExcel(false),
+                },
+              ]}
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
               <span>Overview</span>
-            </button>
+            </ExportMenu>
 
             {/* Print Report */}
-            <button
-              onClick={onOpenPrintModal}
+            <ExportMenu
               title="Print-friendly Station Status Report"
               className="flex items-center space-x-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 font-semibold text-xs sm:text-sm rounded-xl border border-emerald-700/80 transition-colors shadow-sm"
+              options={[
+                {
+                  label: 'With Standard column',
+                  description: 'Include the Standard / Check column',
+                  onSelect: () => onOpenPrintModal(true),
+                },
+                {
+                  label: 'Without Standard column',
+                  description: 'Exclude the Standard / Check column',
+                  onSelect: () => onOpenPrintModal(false),
+                },
+              ]}
             >
               <Printer className="w-4 h-4 text-emerald-300" />
               <span className="hidden md:inline">Print Report</span>
-            </button>
+            </ExportMenu>
           </div>
         </div>
 

@@ -77,6 +77,7 @@ const emptyProduct = (position: number): TrialProduct => ({
   unit: 'ml/acre',
   replications: 3,
   applications: 1,
+  standard: '',
 });
 
 export const TrialFormModal: React.FC<TrialFormModalProps> = ({
@@ -511,6 +512,20 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Standard / Check{' '}
+                    <span className="text-gray-400 font-medium normal-case tracking-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Untreated Control, or a reference product for comparison"
+                    value={product.standard}
+                    onChange={(e) => updateProduct(index, { standard: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
+                  />
                 </div>
               </div>
             ))}

@@ -40,6 +40,7 @@ create table if not exists public.trial_products (
   unit text default '',
   replications integer default 3,
   applications integer default 1,
+  standard text default '',
   created_at timestamptz not null default now()
 );
 

@@ -8,6 +8,7 @@ import {
 } from '../utils/statusLogic';
 import { flattenToProductRows, hasHarvestStage, categoryLabel } from '../data/trialCategories';
 import logoUrl from '../assets/Four Brothers Logo.png';
+import { ExportMenu } from './ExportMenu';
 import { Printer, X, FileSpreadsheet } from 'lucide-react';
 
 interface StationReportPrintViewProps {
@@ -16,9 +17,11 @@ interface StationReportPrintViewProps {
   trials: Trial[];
   referenceDate: string;
   defaultStation?: Station;
-  onDownloadStationExcel: (station: Station) => void;
+  onDownloadStationExcel: (station: Station, includeStandard: boolean) => void;
   /** Human-readable description of the active filters, if any. */
   filterSummary?: string;
+  /** Show the per-product Standard / Check column (defaults to true). */
+  includeStandard?: boolean;
 }
 
 export const StationReportPrintView: React.FC<StationReportPrintViewProps> = ({
@@ -29,6 +32,7 @@ export const StationReportPrintView: React.FC<StationReportPrintViewProps> = ({
   defaultStation = 'Sahiwal',
   onDownloadStationExcel,
   filterSummary,
+  includeStandard = true,
 }) => {
   const [selectedStation, setSelectedStation] = useState<Station>(defaultStation);
 
@@ -79,15 +83,26 @@ export const StationReportPrintView: React.FC<StationReportPrintViewProps> = ({
           </div>
 
           <div className="flex items-center space-x-2">
-            <button
-              onClick={() => onDownloadStationExcel(selectedStation)}
+            <ExportMenu
               disabled={total === 0}
               title={total === 0 ? `No ${selectedStation} trials match the current filters` : `Download ${selectedStation} Excel`}
               className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 text-xs font-semibold rounded-lg border border-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              options={[
+                {
+                  label: 'With Standard column',
+                  description: 'Include the Standard / Check column',
+                  onSelect: () => onDownloadStationExcel(selectedStation, true),
+                },
+                {
+                  label: 'Without Standard column',
+                  description: 'Exclude the Standard / Check column',
+                  onSelect: () => onDownloadStationExcel(selectedStation, false),
+                },
+              ]}
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-300" />
               <span>Download Excel</span>
-            </button>
+            </ExportMenu>
             <button
               onClick={handlePrint}
               className="flex items-center space-x-1.5 px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-xs font-extrabold rounded-lg shadow-sm"
@@ -158,6 +173,9 @@ export const StationReportPrintView: React.FC<StationReportPrintViewProps> = ({
                   <th className="border border-gray-400 p-1.5 w-12">Crop</th>
                   <th className="border border-gray-400 p-1.5 text-left min-w-[100px]">Target Pest/Weed</th>
                   <th className="border border-gray-400 p-1.5 text-left min-w-[95px]">Product</th>
+                  {includeStandard && (
+                    <th className="border border-gray-400 p-1.5 text-left min-w-[95px]">Standard</th>
+                  )}
                   <th className="border border-gray-400 p-1.5 text-left min-w-[90px]">Active Ingr.</th>
                   <th className="border border-gray-400 p-1.5 w-9">Form.</th>
                   <th className="border border-gray-400 p-1.5 w-14">Dose</th>
@@ -211,6 +229,9 @@ export const StationReportPrintView: React.FC<StationReportPrintViewProps> = ({
                         </>
                       )}
                       <td className="border border-gray-300 p-1 font-bold text-gray-900">{product.productName}</td>
+                      {includeStandard && (
+                        <td className="border border-gray-300 p-1 text-gray-700">{product.standard || '–'}</td>
+                      )}
                       <td className="border border-gray-300 p-1 text-gray-700">{product.activeIngredient}</td>
                       <td className="border border-gray-300 p-1 text-center">{product.formulation}</td>
                       <td className="border border-gray-300 p-1 text-center">{product.dose} {product.unit}</td>

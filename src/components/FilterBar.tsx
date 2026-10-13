@@ -17,6 +17,7 @@ import {
   Printer,
   X
 } from 'lucide-react';
+import { ExportMenu } from './ExportMenu';
 
 interface FilterBarProps {
   searchQuery: string;
@@ -44,8 +45,8 @@ interface FilterBarProps {
   uniquePests: string[];
   uniqueProducts: string[];
   uniqueStaff: string[];
-  onDownloadCurrentExcel: () => void;
-  onPrintCurrentReport: () => void;
+  onDownloadCurrentExcel: (includeStandard: boolean) => void;
+  onPrintCurrentReport: (includeStandard: boolean) => void;
   totalFilteredCount: number;
 }
 
@@ -304,9 +305,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         </div>
 
         <div className="flex items-center space-x-2">
-          {/* Quick Download Excel for current filter */}
-          <button
-            onClick={onDownloadCurrentExcel}
+          {/* Quick Download Excel for current filter (with / without Standard) */}
+          <ExportMenu
             disabled={totalFilteredCount === 0}
             title={
               totalFilteredCount === 0
@@ -314,6 +314,18 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 : 'Download Excel for the current filter results (Overview + matching station sheets)'
             }
             className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            options={[
+              {
+                label: 'With Standard column',
+                description: 'Include the Standard / Check column',
+                onSelect: () => onDownloadCurrentExcel(true),
+              },
+              {
+                label: 'Without Standard column',
+                description: 'Exclude the Standard / Check column',
+                onSelect: () => onDownloadCurrentExcel(false),
+              },
+            ]}
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
             <span>
@@ -321,18 +333,30 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 ? `Download Excel (${totalFilteredCount})`
                 : `Download ${selectedStation} Excel (${totalFilteredCount})`}
             </span>
-          </button>
+          </ExportMenu>
 
-          {/* Quick Print Report */}
-          <button
-            onClick={onPrintCurrentReport}
+          {/* Quick Print Report (with / without Standard) */}
+          <ExportMenu
+            title="Print-friendly station report"
             className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors"
+            options={[
+              {
+                label: 'With Standard column',
+                description: 'Include the Standard / Check column',
+                onSelect: () => onPrintCurrentReport(true),
+              },
+              {
+                label: 'Without Standard column',
+                description: 'Exclude the Standard / Check column',
+                onSelect: () => onPrintCurrentReport(false),
+              },
+            ]}
           >
             <Printer className="w-3.5 h-3.5 text-slate-600" />
             <span>
               {selectedStation === 'All' ? 'Print Station Report' : `Print ${selectedStation} Report`}
             </span>
-          </button>
+          </ExportMenu>
         </div>
       </div>
 

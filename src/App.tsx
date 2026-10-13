@@ -118,6 +118,10 @@ export default function App() {
 
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [printStation, setPrintStation] = useState<Station>('Sahiwal');
+  const [printIncludeStandard, setPrintIncludeStandard] = useState(true);
+
+  // Per-product Standard / Check column visibility in the on-screen table.
+  const [showStandardColumn, setShowStandardColumn] = useState(true);
 
   const [trialToDelete, setTrialToDelete] = useState<Trial | null>(null);
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
@@ -228,7 +232,8 @@ export default function App() {
             t.products.some(
               (p) =>
                 p.productName.toLowerCase().includes(q) ||
-                p.activeIngredient.toLowerCase().includes(q)
+                p.activeIngredient.toLowerCase().includes(q) ||
+                (p.standard && p.standard.toLowerCase().includes(q))
             ) ||
             (t.remarks && t.remarks.toLowerCase().includes(q));
 
@@ -356,10 +361,10 @@ export default function App() {
   // ── Excel downloads ───────────────────────────────────────────────────────
   // Every export reflects the active filters: it operates on `filteredTrials`
   // (already filtered + sorted) and records the filter summary in the header.
-  const handleDownloadAllExcel = async () => {
+  const handleDownloadAllExcel = async (includeStandard: boolean) => {
     setIsDownloading(true);
     try {
-      await downloadCompleteExcel(filteredTrials, referenceDate, filterSummary);
+      await downloadCompleteExcel(filteredTrials, referenceDate, filterSummary, includeStandard);
     } catch (err) {
       console.error('Download failed:', err);
       alert('Error generating Excel file. Please try again.');
@@ -368,10 +373,10 @@ export default function App() {
     }
   };
 
-  const handleDownloadOverviewExcel = async () => {
+  const handleDownloadOverviewExcel = async (includeStandard: boolean) => {
     setIsDownloading(true);
     try {
-      await downloadOverviewExcel(filteredTrials, referenceDate, filterSummary);
+      await downloadOverviewExcel(filteredTrials, referenceDate, filterSummary, includeStandard);
     } catch (err) {
       console.error('Download failed:', err);
       alert('Error generating overview Excel. Please try again.');
@@ -380,10 +385,10 @@ export default function App() {
     }
   };
 
-  const handleDownloadStationExcel = async (station: Station) => {
+  const handleDownloadStationExcel = async (station: Station, includeStandard: boolean) => {
     setIsDownloading(true);
     try {
-      await downloadStationExcel(station, filteredTrials, referenceDate, filterSummary);
+      await downloadStationExcel(station, filteredTrials, referenceDate, filterSummary, includeStandard);
     } catch (err) {
       console.error('Download failed:', err);
       alert('Error generating station Excel. Please try again.');
@@ -394,18 +399,20 @@ export default function App() {
 
   // The filter-bar download button shares the complete-workbook behaviour:
   // Overview + one sheet per station that has matching trials.
-  const handleDownloadCurrentFilteredExcel = async () => {
-    await handleDownloadAllExcel();
+  const handleDownloadCurrentFilteredExcel = async (includeStandard: boolean) => {
+    await handleDownloadAllExcel(includeStandard);
   };
 
   // ── Print ─────────────────────────────────────────────────────────────────
-  const handleOpenPrintForStation = (station: Station) => {
+  const handleOpenPrintForStation = (station: Station, includeStandard: boolean) => {
     setPrintStation(station);
+    setPrintIncludeStandard(includeStandard);
     setIsPrintModalOpen(true);
   };
 
-  const handleOpenPrintModal = () => {
+  const handleOpenPrintModal = (includeStandard: boolean) => {
     setPrintStation(activeStation !== 'All' ? activeStation : 'Sahiwal');
+    setPrintIncludeStandard(includeStandard);
     setIsPrintModalOpen(true);
   };
 
@@ -469,12 +476,13 @@ export default function App() {
                 unit: t.unit || '',
                 replications: t.replications ?? 3,
                 applications: t.applications ?? 1,
+                standard: '',
               },
             ];
         const schedule =
           Array.isArray(t.observationSchedule) && t.observationSchedule.length > 0
             ? t.observationSchedule
-            : [3, 7, 14, 21, 28];
+            : [0, 3, 7, 14, 21, 28];
         return {
           ...t,
           category: t.category || 'Herbicide',
@@ -636,8 +644,22 @@ export default function App() {
                 {filteredTrials.length} {filteredTrials.length === 1 ? 'Trial' : 'Trials'}
               </span>
             </div>
-            <div className="text-xs text-gray-500 hidden sm:block">
-              Green rows = Completed &bull; Orange = Observations Due &bull; One row per product
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="text-xs text-gray-500 hidden sm:block">
+                Green rows = Completed &bull; Orange = Observations Due &bull; One row per product
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowStandardColumn((value) => !value)}
+                title="Show or hide the per-product Standard / Check column"
+                className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors whitespace-nowrap ${
+                  showStandardColumn
+                    ? 'bg-sky-50 text-sky-800 border-sky-200 hover:bg-sky-100'
+                    : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                {showStandardColumn ? 'Hide' : 'Show'} Standard
+              </button>
             </div>
           </div>
 
@@ -645,6 +667,7 @@ export default function App() {
             trials={filteredTrials}
             referenceDate={referenceDate}
             currentRole={role}
+            showStandard={showStandardColumn}
             onEditTrial={(t) => {
               setEditingTrial(t);
               setIsTrialFormOpen(true);
@@ -744,6 +767,7 @@ export default function App() {
         defaultStation={printStation}
         onDownloadStationExcel={handleDownloadStationExcel}
         filterSummary={filterSummary}
+        includeStandard={printIncludeStandard}
       />
 
       <DeleteConfirmModal
