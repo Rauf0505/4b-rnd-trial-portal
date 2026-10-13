@@ -386,12 +386,34 @@ export async function saveObservation(
   entry: ObservationEntryInput
 ): Promise<Trial[]> {
   const supabase = requireSupabase();
+
+  // `observations.planned_date` is NOT NULL, and Postgres validates NOT NULL
+  // constraints before resolving an upsert conflict. Always supply it (derived
+  // from the trial's category + conducted date) so inserts and updates work.
+  const { data: trialRow, error: trialErr } = await supabase
+    .from('trials')
+    .select('category, insecticide_sub_category, conducted_date')
+    .eq('id', trialId)
+    .single();
+  if (trialErr) throw trialErr;
+
+  const meta = trialRow as Pick<
+    TrialRow,
+    'category' | 'insecticide_sub_category' | 'conducted_date'
+  >;
+  const { observationDates } = buildSchedule(
+    meta.category,
+    meta.insecticide_sub_category,
+    meta.conducted_date
+  );
+
   const { error } = await supabase
     .from('observations')
     .upsert(
       {
         trial_id: trialId,
         day,
+        planned_date: observationDates[day] ?? entry.actualDate,
         completed: entry.completed,
         actual_date: entry.actualDate,
         efficacy_percent: entry.efficacyPercent ?? null,

@@ -110,6 +110,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           {searchQuery && (
             <button
               onClick={() => onSearchChange('')}
+              aria-label="Clear search"
               className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
             >
               <X className="w-4 h-4" />

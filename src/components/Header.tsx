@@ -166,6 +166,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Primary Action: Add New Trial */}
             <button
               onClick={onOpenNewTrialModal}
+              aria-label="Add Trial"
               className="flex items-center space-x-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all active:scale-95"
             >
               <Plus className="w-4 h-4 text-emerald-950 stroke-[3]" />

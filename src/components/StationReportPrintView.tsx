@@ -112,6 +112,7 @@ export const StationReportPrintView: React.FC<StationReportPrintViewProps> = ({
             </button>
             <button
               onClick={onClose}
+              aria-label="Close print report"
               className="p-1.5 text-emerald-200 hover:text-white hover:bg-emerald-800 rounded-lg"
             >
               <X className="w-5 h-5" />

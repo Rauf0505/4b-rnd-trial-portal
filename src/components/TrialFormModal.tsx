@@ -234,6 +234,7 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close trial form"
             className="w-8 h-8 rounded-lg bg-emerald-900/50 hover:bg-emerald-700 text-emerald-200 hover:text-white flex items-center justify-center transition-colors"
           >
             <X className="w-5 h-5" />
