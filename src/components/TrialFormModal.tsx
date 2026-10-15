@@ -102,8 +102,8 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
   const [customCrop, setCustomCrop] = useState('');
   const [pestOrWeed, setPestOrWeed] = useState('');
   const [products, setProducts] = useState<TrialProduct[]>([emptyProduct(0)]);
-  // Trial-wide Standard / Check, mirrored onto every product row on save.
-  const [standard, setStandard] = useState('');
+  // Standards / Checks for this trial; each product picks one of these.
+  const [standards, setStandards] = useState<string[]>([]);
   const [conductedDate, setConductedDate] = useState(formatISODate(new Date()));
   const [harvestStageDate, setHarvestStageDate] = useState('');
   const [fieldLocation, setFieldLocation] = useState('');
@@ -134,8 +134,12 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
           ? editingTrial.products.map((p, i) => ({ ...p, position: i }))
           : [emptyProduct(0)];
       setProducts(editableProducts);
-      // All products share one Standard; surface the first existing value.
-      setStandard(editableProducts.find((p) => p.standard)?.standard ?? '');
+      // Rebuild the standards list from the values saved on the products.
+      setStandards(
+        Array.from(
+          new Set(editableProducts.map((p) => p.standard.trim()).filter(Boolean))
+        )
+      );
       setConductedDate(editingTrial.conductedDate);
       setHarvestStageDate(editingTrial.harvestStageDate || '');
       setFieldLocation(editingTrial.fieldLocation);
@@ -151,7 +155,7 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
       setCustomCrop('');
       setPestOrWeed('');
       setProducts([emptyProduct(0)]);
-      setStandard('');
+      setStandards([]);
       setConductedDate(formatISODate(new Date()));
       setHarvestStageDate('');
       setFieldLocation('');
@@ -173,6 +177,25 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
     setProducts((prev) =>
       prev.filter((_, i) => i !== index).map((p, i) => ({ ...p, position: i }))
     );
+
+  const addStandard = () => setStandards((prev) => [...prev, '']);
+
+  const updateStandard = (index: number, value: string) =>
+    setStandards((prev) => prev.map((s, i) => (i === index ? value : s)));
+
+  const removeStandard = (index: number) => {
+    const removed = standards[index];
+    setStandards((prev) => prev.filter((_, i) => i !== index));
+    // A product still pointing at the removed standard falls back to "none".
+    setProducts((prev) =>
+      prev.map((p) => (p.standard === removed ? { ...p, standard: '' } : p))
+    );
+  };
+
+  // Clean, de-duplicated options for each product's Standard dropdown.
+  const standardChoices = Array.from(
+    new Set(standards.map((s) => s.trim()).filter(Boolean))
+  );
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -208,7 +231,7 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
       insecticideSubCategory: category === 'Insecticide' ? insecticideSubCategory : null,
       crop: finalCrop,
       pestOrWeed: pestOrWeed.trim(),
-      products: products.map((p, i) => ({ ...p, position: i, standard: standard.trim() })),
+      products: products.map((p, i) => ({ ...p, position: i, standard: p.standard.trim() })),
       conductedDate,
       harvestStageDate: showHarvest ? harvestStageDate : null,
       fieldLocation: fieldLocation.trim(),
@@ -391,26 +414,54 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
             </div>
             {errors.products && <p className="text-[11px] text-red-600">{errors.products}</p>}
 
-            {/* Trial-wide Standard / Check — mirrored onto every product on save */}
-            <div className="border border-emerald-200 rounded-xl p-3.5 bg-emerald-50/40">
-              <label
-                htmlFor="trial-standard"
-                className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1"
-              >
-                Standard / Check{' '}
-                <span className="text-gray-400 font-medium normal-case tracking-normal">
-                  (applies to all products, optional)
-                </span>
-              </label>
-              <input
-                id="trial-standard"
-                type="text"
-                list="trial-standard-options"
-                placeholder="e.g. Untreated Control, or a reference product"
-                value={standard}
-                onChange={(e) => setStandard(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
-              />
+            {/* Standards / Checks — each product picks one below */}
+            <div className="border border-emerald-200 rounded-xl p-3.5 bg-emerald-50/40 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  Standards / Checks{' '}
+                  <span className="text-gray-400 font-medium normal-case tracking-normal">
+                    (products pick one)
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  onClick={addStandard}
+                  aria-label="Add Standard"
+                  className="flex items-center space-x-1 px-3 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 whitespace-nowrap"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Standard</span>
+                </button>
+              </div>
+
+              {standards.length === 0 ? (
+                <p className="text-[11px] text-gray-500">
+                  No standards added yet. Use <span className="font-semibold">Add Standard</span>,
+                  then assign one to each product.
+                </p>
+              ) : (
+                standards.map((value, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      list="trial-standard-options"
+                      aria-label={`Standard #${index + 1}`}
+                      placeholder="e.g. Untreated Control, or a reference product"
+                      value={value}
+                      onChange={(e) => updateStandard(index, e.target.value)}
+                      className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeStandard(index)}
+                      aria-label={`Remove Standard #${index + 1}`}
+                      className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
               <datalist id="trial-standard-options">
                 {standardOptions.map((s) => (
                   <option key={s} value={s} />
@@ -551,6 +602,32 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Standard / Check{' '}
+                    <span className="text-gray-400 font-medium normal-case tracking-normal">
+                      (optional)
+                    </span>
+                  </label>
+                  <select
+                    aria-label={`Standard for Product #${index + 1}`}
+                    value={product.standard}
+                    onChange={(e) => updateProduct(index, { standard: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="">— None —</option>
+                    {/* Keep a saved value that is no longer in the list selectable. */}
+                    {product.standard && !standardChoices.includes(product.standard) && (
+                      <option value={product.standard}>{product.standard}</option>
+                    )}
+                    {standardChoices.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
               </div>
