@@ -38,6 +38,11 @@ interface TrialFormModalProps {
   editingTrial?: Trial | null;
   defaultStation?: Station;
   isSaving?: boolean;
+  /**
+   * Previously used Standard / Check values (from every trial). Rendered as a
+   * `<datalist>` so the field works as a dropdown + free text.
+   */
+  standardOptions?: string[];
 }
 
 const COMMON_CROPS = [
@@ -87,6 +92,7 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
   editingTrial,
   defaultStation = 'Sahiwal',
   isSaving = false,
+  standardOptions = [],
 }) => {
   const [station, setStation] = useState<Station>(defaultStation);
   const [trialName, setTrialName] = useState('');
@@ -96,6 +102,8 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
   const [customCrop, setCustomCrop] = useState('');
   const [pestOrWeed, setPestOrWeed] = useState('');
   const [products, setProducts] = useState<TrialProduct[]>([emptyProduct(0)]);
+  // Trial-wide Standard / Check, mirrored onto every product row on save.
+  const [standard, setStandard] = useState('');
   const [conductedDate, setConductedDate] = useState(formatISODate(new Date()));
   const [harvestStageDate, setHarvestStageDate] = useState('');
   const [fieldLocation, setFieldLocation] = useState('');
@@ -121,11 +129,13 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
         setCustomCrop(editingTrial.crop);
       }
       setPestOrWeed(editingTrial.pestOrWeed);
-      setProducts(
+      const editableProducts =
         editingTrial.products.length > 0
           ? editingTrial.products.map((p, i) => ({ ...p, position: i }))
-          : [emptyProduct(0)]
-      );
+          : [emptyProduct(0)];
+      setProducts(editableProducts);
+      // All products share one Standard; surface the first existing value.
+      setStandard(editableProducts.find((p) => p.standard)?.standard ?? '');
       setConductedDate(editingTrial.conductedDate);
       setHarvestStageDate(editingTrial.harvestStageDate || '');
       setFieldLocation(editingTrial.fieldLocation);
@@ -141,6 +151,7 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
       setCustomCrop('');
       setPestOrWeed('');
       setProducts([emptyProduct(0)]);
+      setStandard('');
       setConductedDate(formatISODate(new Date()));
       setHarvestStageDate('');
       setFieldLocation('');
@@ -197,7 +208,7 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
       insecticideSubCategory: category === 'Insecticide' ? insecticideSubCategory : null,
       crop: finalCrop,
       pestOrWeed: pestOrWeed.trim(),
-      products: products.map((p, i) => ({ ...p, position: i })),
+      products: products.map((p, i) => ({ ...p, position: i, standard: standard.trim() })),
       conductedDate,
       harvestStageDate: showHarvest ? harvestStageDate : null,
       fieldLocation: fieldLocation.trim(),
@@ -380,6 +391,33 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
             </div>
             {errors.products && <p className="text-[11px] text-red-600">{errors.products}</p>}
 
+            {/* Trial-wide Standard / Check — mirrored onto every product on save */}
+            <div className="border border-emerald-200 rounded-xl p-3.5 bg-emerald-50/40">
+              <label
+                htmlFor="trial-standard"
+                className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1"
+              >
+                Standard / Check{' '}
+                <span className="text-gray-400 font-medium normal-case tracking-normal">
+                  (applies to all products, optional)
+                </span>
+              </label>
+              <input
+                id="trial-standard"
+                type="text"
+                list="trial-standard-options"
+                placeholder="e.g. Untreated Control, or a reference product"
+                value={standard}
+                onChange={(e) => setStandard(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
+              />
+              <datalist id="trial-standard-options">
+                {standardOptions.map((s) => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
+            </div>
+
             {products.map((product, index) => (
               <div key={index} className="border border-gray-200 rounded-xl p-3.5 bg-gray-50/50 space-y-3">
                 <div className="flex items-center justify-between">
@@ -515,19 +553,6 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Standard / Check{' '}
-                    <span className="text-gray-400 font-medium normal-case tracking-normal">(optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Untreated Control, or a reference product for comparison"
-                    value={product.standard}
-                    onChange={(e) => updateProduct(index, { standard: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
               </div>
             ))}
           </div>

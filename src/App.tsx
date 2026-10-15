@@ -185,6 +185,18 @@ export default function App() {
     return Array.from(set).sort();
   }, [trials]);
 
+  // Previously used Standard / Check values, offered as a dropdown in the form.
+  const uniqueStandards = useMemo(() => {
+    const set = new Set<string>();
+    trials.forEach((t) =>
+      t.products.forEach((p) => {
+        const value = p.standard.trim();
+        if (value) set.add(value);
+      })
+    );
+    return Array.from(set).sort();
+  }, [trials]);
+
   const uniqueStaff = useMemo(
     () => Array.from(new Set(trials.map((t) => t.fieldStaffName))).filter(Boolean).sort(),
     [trials]
@@ -743,6 +755,7 @@ export default function App() {
         editingTrial={editingTrial}
         defaultStation={activeStation !== 'All' ? activeStation : 'Sahiwal'}
         isSaving={isSaving}
+        standardOptions={uniqueStandards}
       />
 
       <ObservationModal

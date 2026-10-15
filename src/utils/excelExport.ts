@@ -35,13 +35,13 @@ function buildStationColumns(
     { header: 'Crop', key: 'crop', width: 13, align: 'center' },
     { header: 'Pest / Weed', key: 'pestOrWeed', width: 28 },
     { header: 'Product / Brand', key: 'productName', width: 22 },
-    ...(includeStandard
-      ? [{ header: 'Standard / Check', key: 'standard', width: 22 } as ColumnConfig]
-      : []),
     { header: 'Active Ingredient', key: 'activeIngredient', width: 24 },
     { header: 'Formulation', key: 'formulation', width: 12, align: 'center' },
     { header: 'Dose', key: 'dose', width: 9, align: 'center' },
     { header: 'Unit', key: 'unit', width: 13, align: 'center' },
+    ...(includeStandard
+      ? [{ header: 'Standard / Check', key: 'standard', width: 22 } as ColumnConfig]
+      : []),
     { header: 'Replications', key: 'replications', width: 12, align: 'center' },
     { header: 'Applications', key: 'applications', width: 12, align: 'center' },
     { header: 'Conducted Date', key: 'conductedDate', width: 15, align: 'center' },
@@ -333,13 +333,13 @@ function populateOverviewSheet(
     { header: 'Crop', key: 'crop', width: 13, align: 'center' },
     { header: 'Pest / Weed', key: 'pestOrWeed', width: 26 },
     { header: 'Product / Brand', key: 'productName', width: 22 },
-    ...(includeStandard
-      ? [{ header: 'Standard / Check', key: 'standard', width: 22 } as ColumnConfig]
-      : []),
     { header: 'Active Ingredient', key: 'activeIngredient', width: 24 },
     { header: 'Formulation', key: 'formulation', width: 12, align: 'center' },
     { header: 'Dose', key: 'dose', width: 9, align: 'center' },
     { header: 'Unit', key: 'unit', width: 13, align: 'center' },
+    ...(includeStandard
+      ? [{ header: 'Standard / Check', key: 'standard', width: 22 } as ColumnConfig]
+      : []),
     { header: 'Replications', key: 'replications', width: 12, align: 'center' },
     { header: 'Applications', key: 'applications', width: 12, align: 'center' },
     { header: 'Conducted Date', key: 'conductedDate', width: 15, align: 'center' },

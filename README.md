@@ -11,7 +11,8 @@ Sahiwal, Multan, Lahore and Hyderabad research stations.
   - Phytotoxicity: `0, 1, 3, 7, 10, 12, 14, 21 DAA`
   - Foliar insecticide: `0, 1, 3, 7, 14, 21, 28 DAA`
   - Fertilizer / Growth also accepts a manually entered **harvesting stage** date.
-- **Multiple products per trial** — each with brand, active ingredient, formulation, dose, unit, replications, applications and a free-text **Standard / Check** (products may share or differ).
+- **Multiple products per trial** — each with brand, active ingredient, formulation, dose, unit, replications and applications.
+- **Standard / Check** is entered once per trial (at the top of the products section) and mirrored onto every product row. It is a dropdown of previously used values that also accepts free text.
 - **Filtering** by station, status, category, sub-category, crop, pest/weed, product and staff.
 - **Excel exports** with dynamic DAA columns and a consolidated **Dashboard Overview** sheet (all trials, all locations). Every export (and the print report) can be generated **with or without** the Standard / Check column from its dropdown; the on-screen table has a show/hide toggle.
 - Print-friendly station status reports.

@@ -174,12 +174,12 @@ export const StationReportPrintView: React.FC<StationReportPrintViewProps> = ({
                   <th className="border border-gray-400 p-1.5 w-12">Crop</th>
                   <th className="border border-gray-400 p-1.5 text-left min-w-[100px]">Target Pest/Weed</th>
                   <th className="border border-gray-400 p-1.5 text-left min-w-[95px]">Product</th>
-                  {includeStandard && (
-                    <th className="border border-gray-400 p-1.5 text-left min-w-[95px]">Standard</th>
-                  )}
                   <th className="border border-gray-400 p-1.5 text-left min-w-[90px]">Active Ingr.</th>
                   <th className="border border-gray-400 p-1.5 w-9">Form.</th>
                   <th className="border border-gray-400 p-1.5 w-14">Dose</th>
+                  {includeStandard && (
+                    <th className="border border-gray-400 p-1.5 text-left min-w-[95px]">Standard</th>
+                  )}
                   <th className="border border-gray-400 p-1.5 w-7">Rep.</th>
                   <th className="border border-gray-400 p-1.5 w-7">App.</th>
                   <th className="border border-gray-400 p-1.5 min-w-[60px]">Conducted</th>
@@ -230,12 +230,12 @@ export const StationReportPrintView: React.FC<StationReportPrintViewProps> = ({
                         </>
                       )}
                       <td className="border border-gray-300 p-1 font-bold text-gray-900">{product.productName}</td>
-                      {includeStandard && (
-                        <td className="border border-gray-300 p-1 text-gray-700">{product.standard || '–'}</td>
-                      )}
                       <td className="border border-gray-300 p-1 text-gray-700">{product.activeIngredient}</td>
                       <td className="border border-gray-300 p-1 text-center">{product.formulation}</td>
                       <td className="border border-gray-300 p-1 text-center">{product.dose} {product.unit}</td>
+                      {includeStandard && (
+                        <td className="border border-gray-300 p-1 text-gray-700">{product.standard || '–'}</td>
+                      )}
                       <td className="border border-gray-300 p-1 text-center">{product.replications}</td>
                       <td className="border border-gray-300 p-1 text-center">{product.applications}</td>
                       {pIdx === 0 && (

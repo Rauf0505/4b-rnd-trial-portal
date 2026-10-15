@@ -135,10 +135,10 @@ export const TrialTable: React.FC<TrialTableProps> = ({
               <th className="py-3 px-3 w-24">Crop</th>
               <th className="py-3 px-3 min-w-[150px]">Pest / Weed</th>
               <th className="py-3 px-3 min-w-[150px]">Product / Brand</th>
-              {showStandard && <th className="py-3 px-3 min-w-[150px]">Standard / Check</th>}
               <th className="py-3 px-3 min-w-[130px]">Active Ingr.</th>
               <th className="py-3 px-3 w-20 text-center">Form.</th>
               <th className="py-3 px-3 w-24 text-center">Dose</th>
+              {showStandard && <th className="py-3 px-3 min-w-[150px]">Standard / Check</th>}
               <th className="py-3 px-3 w-16 text-center">Rep.</th>
               <th className="py-3 px-3 w-16 text-center">App.</th>
               <th className="py-3 px-3 min-w-[100px] text-center">Conducted</th>
@@ -211,17 +211,6 @@ export const TrialTable: React.FC<TrialTableProps> = ({
                   <td className="py-3 px-3 font-bold text-emerald-900 whitespace-nowrap border-r border-gray-50">
                     {product.productName}
                   </td>
-                  {showStandard && (
-                    <td className="py-3 px-3 text-gray-700 whitespace-nowrap border-r border-gray-50">
-                      {product.standard ? (
-                        <span className="inline-block px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 text-[10px] font-semibold">
-                          {product.standard}
-                        </span>
-                      ) : (
-                        <span className="text-gray-300">–</span>
-                      )}
-                    </td>
-                  )}
                   <td className="py-3 px-3 text-gray-600 border-r border-gray-50">
                     {product.activeIngredient}
                   </td>
@@ -233,6 +222,17 @@ export const TrialTable: React.FC<TrialTableProps> = ({
                   <td className="py-3 px-3 text-center font-semibold text-gray-800 whitespace-nowrap border-r border-gray-50">
                     {product.dose} {product.unit}
                   </td>
+                  {showStandard && (
+                    <td className="py-3 px-3 text-gray-700 whitespace-nowrap border-r border-gray-50">
+                      {product.standard ? (
+                        <span className="inline-block px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 text-[10px] font-semibold">
+                          {product.standard}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">–</span>
+                      )}
+                    </td>
+                  )}
                   <td className="py-3 px-3 text-center text-gray-600 border-r border-gray-50">
                     {product.replications}
                   </td>

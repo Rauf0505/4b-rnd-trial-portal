@@ -52,7 +52,6 @@ interface ProductInput {
   name: string;
   ai: string;
   dose: string;
-  standard: string;
 }
 
 async function fillTrialForm(
@@ -64,6 +63,8 @@ async function fillTrialForm(
     name: string;
     pest: string;
     products: ProductInput[];
+    /** Trial-wide Standard / Check, mirrored onto every product row. */
+    standard?: string;
   }
 ): Promise<void> {
   const modal = page
@@ -89,7 +90,11 @@ async function fillTrialForm(
     await page.getByPlaceholder('e.g. Proclaim 05 SG').nth(i).fill(p.name);
     await page.getByPlaceholder('e.g. Emamectin Benzoate').nth(i).fill(p.ai);
     await page.getByPlaceholder('100').nth(i).fill(p.dose);
-    await page.getByPlaceholder(/Untreated Control/).nth(i).fill(p.standard);
+  }
+
+  if (opts.standard) {
+    // One trial-wide Standard, applied to every product row on save.
+    await page.getByPlaceholder(/Untreated Control/).fill(opts.standard);
   }
 
   await page
@@ -155,6 +160,11 @@ test('dashboard loads with seeded trials and consistent KPIs', async ({ page }) 
   await expect(page.getByRole('columnheader', { name: '0 DAA', exact: true })).toBeVisible();
   // Standard / Check column is visible by default.
   await expect(page.getByRole('columnheader', { name: STANDARD_HEADER, exact: true })).toBeVisible();
+
+  // ...and it sits immediately before the Replication column.
+  const headers = await page.locator('thead th').allInnerTexts();
+  expect(headers).toContain('Rep.');
+  expect(headers.indexOf(STANDARD_HEADER)).toBe(headers.indexOf('Rep.') - 1);
 });
 
 // ── 2. create a single-product trial ────────────────────────────────────────
@@ -176,7 +186,8 @@ test('creates a single-product trial with a 0 DAA baseline that is due today', a
     category: 'Herbicide',
     name: SINGLE,
     pest: `E2E Pest ${RUN}`,
-    products: [{ name: `E2E Prod Single ${RUN}`, ai: 'Alpha Ingredient', dose: '100', standard: STD_SINGLE }],
+    standard: STD_SINGLE,
+    products: [{ name: `E2E Prod Single ${RUN}`, ai: 'Alpha Ingredient', dose: '100' }],
   });
 
   await expect.poll(() => kpiNumber(page, 'Total Trials')).toBe(before.total + 1);
@@ -209,18 +220,27 @@ test('persists the new trial across a reload', async ({ page }) => {
 
 // ── 4. multi-product trial ──────────────────────────────────────────────────
 
-test('creates a multi-product trial with one table row per product', async ({ page }) => {
+test('creates a multi-product trial with one row per product, all sharing one Standard', async ({
+  page,
+}) => {
   await gotoApp(page);
   await openTrialForm(page);
+
+  // The Standard field is a dropdown + free text: it offers standards already in use.
+  await expect(
+    page.locator(`#trial-standard-options option[value="${STD_SINGLE}"]`)
+  ).toHaveCount(1);
+
   await fillTrialForm(page, {
     station: 'Multan',
     category: 'Insecticide',
     subCategory: 'Granular',
     name: MULTI,
     pest: `E2E Multi Pest ${RUN}`,
+    standard: STD_SHARED,
     products: [
-      { name: PROD_A, ai: 'Alpha AI', dose: '120', standard: STD_SHARED },
-      { name: PROD_B, ai: 'Beta AI', dose: '240', standard: STD_SHARED },
+      { name: PROD_A, ai: 'Alpha AI', dose: '120' },
+      { name: PROD_B, ai: 'Beta AI', dose: '240' },
     ],
   });
 
@@ -230,7 +250,7 @@ test('creates a multi-product trial with one table row per product', async ({ pa
   const body = page.locator('tbody');
   await expect(body.getByText(PROD_A, { exact: true })).toBeVisible();
   await expect(body.getByText(PROD_B, { exact: true })).toBeVisible();
-  // Both products may share the same free-text Standard.
+  // The single trial-wide Standard is mirrored onto both product rows.
   await expect(body.getByText(STD_SHARED, { exact: true })).toHaveCount(2);
 });
 
@@ -402,6 +422,9 @@ test('edits an existing trial and persists the change', async ({ page }) => {
   const row = page.locator('tbody tr').first();
   await row.getByTitle('Edit Trial Information').click();
   await expect(page.getByRole('heading', { name: 'Edit R&D Field Trial' })).toBeVisible();
+
+  // The single trial-wide Standard is prefilled from the saved products.
+  await expect(page.locator('#trial-standard')).toHaveValue(STD_SINGLE);
 
   const newName = `${SINGLE}-EDITED`;
   await page.getByPlaceholder('e.g. Bio-efficacy of Emamectin on Spodoptera').fill(newName);
