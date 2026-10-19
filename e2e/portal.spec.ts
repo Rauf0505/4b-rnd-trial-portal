@@ -103,9 +103,10 @@ async function fillTrialForm(
     await page.getByPlaceholder('e.g. Emamectin Benzoate').nth(i).fill(p.ai);
     await page.getByPlaceholder('100').nth(i).fill(p.dose);
     if (p.standards && p.standards.length > 0) {
-      await page
-        .getByLabel(`Standard for Product #${i + 1}`, { exact: true })
-        .selectOption(p.standards);
+      const picker = page.getByRole('group', { name: `Standard for Product #${i + 1}`, exact: true });
+      for (const standard of p.standards) {
+        await picker.getByRole('checkbox', { name: standard, exact: true }).check();
+      }
     }
   }
 
@@ -361,6 +362,46 @@ test('lets a single product carry multiple Standards', async ({ page }) => {
   await expect(row.getByText(STD_B, { exact: true })).toBeVisible();
 });
 
+// ── 4d. the per-product Standard picker is a set of toggle chips ────────────
+
+test('toggles several standard chips on one product', async ({ page }) => {
+  await gotoApp(page);
+  await openTrialForm(page);
+
+  // Name two standards on the trial first.
+  for (const [index, standard] of [STD_A, STD_B].entries()) {
+    await page.getByRole('button', { name: 'Add Standard', exact: true }).click();
+    await page.getByLabel(`Standard #${index + 1}`, { exact: true }).fill(standard);
+  }
+
+  const picker = page.getByRole('group', { name: 'Standard for Product #1', exact: true });
+  await expect(picker).toBeVisible();
+  await expect(picker.getByText('0 selected', { exact: true })).toBeVisible();
+
+  // Pick two of them; the counter and both chips stay selected.
+  await picker.getByRole('checkbox', { name: STD_A, exact: true }).check();
+  await picker.getByRole('checkbox', { name: STD_B, exact: true }).check();
+  await expect(picker.getByRole('checkbox', { name: STD_A, exact: true })).toBeChecked();
+  await expect(picker.getByRole('checkbox', { name: STD_B, exact: true })).toBeChecked();
+  await expect(picker.getByText('2 selected', { exact: true })).toBeVisible();
+
+  // Unticking one keeps the other.
+  await picker.getByRole('checkbox', { name: STD_A, exact: true }).uncheck();
+  await expect(picker.getByRole('checkbox', { name: STD_B, exact: true })).toBeChecked();
+  await expect(picker.getByText('1 selected', { exact: true })).toBeVisible();
+
+  // "All" and "Clear" are one-click shortcuts.
+  await picker
+    .getByRole('button', { name: 'Select all standards for Product #1', exact: true })
+    .click();
+  await expect(picker.getByText('2 selected', { exact: true })).toBeVisible();
+  await picker.getByRole('button', { name: 'Clear standards for Product #1', exact: true }).click();
+  await expect(picker.getByText('0 selected', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close trial form', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Add New Field Trial' })).toBeHidden();
+});
+
 // ── 5. observations + date-driven status transitions ────────────────────────
 
 test('records every observation and completes the trial once its final date passes', async ({
@@ -531,9 +572,12 @@ test('edits an existing trial and persists the change', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Edit R&D Field Trial' })).toBeVisible();
 
   // The per-product Standard picker is prefilled from the saved value.
-  await expect(
-    page.getByLabel('Standard for Product #1', { exact: true })
-  ).toHaveValues([STD_SINGLE]);
+  const standardPicker = page.getByRole('group', {
+    name: 'Standard for Product #1',
+    exact: true,
+  });
+  await expect(standardPicker.getByRole('checkbox', { name: STD_SINGLE, exact: true })).toBeChecked();
+  await expect(standardPicker.getByText('1 selected', { exact: true })).toBeVisible();
 
   const newName = `${SINGLE}-EDITED`;
   await page.getByPlaceholder('e.g. Bio-efficacy of Emamectin on Spodoptera').fill(newName);

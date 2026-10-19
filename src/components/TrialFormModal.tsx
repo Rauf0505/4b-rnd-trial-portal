@@ -203,6 +203,21 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
     new Set(standards.map((s) => s.trim()).filter(Boolean))
   );
 
+  // Every standard a product can pick: the trial's list first, then any value
+  // saved on the product that is no longer in the list (so nothing is lost).
+  const pickableStandardsFor = (product: TrialProduct): string[] => [
+    ...standardChoices,
+    ...(product.standard ?? []).filter((s) => !standardChoices.includes(s)),
+  ];
+
+  // Pressing Enter while typing a standard adds another row instead of saving.
+  const handleStandardKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addStandard();
+    }
+  };
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!trialName.trim()) newErrors.trialName = 'Trial name is required';
@@ -425,19 +440,24 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
             {errors.products && <p className="text-[11px] text-red-600">{errors.products}</p>}
 
             {/* Standards / Checks — each product picks one or more below */}
-            <div className="border border-emerald-200 rounded-xl p-3.5 bg-emerald-50/40 space-y-2">
+            <div className="border border-emerald-200 rounded-xl p-3.5 bg-emerald-50/40 space-y-2.5">
               <div className="flex items-center justify-between gap-2">
-                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Standards / Checks{' '}
-                  <span className="text-gray-400 font-medium normal-case tracking-normal">
-                    (products pick one or more)
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Standards / Checks
                   </span>
-                </label>
+                  <span className="shrink-0 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">
+                    {standardChoices.length}
+                  </span>
+                  <span className="hidden sm:inline text-gray-400 font-medium text-[11px] truncate">
+                    picked per product below
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={addStandard}
                   aria-label="Add Standard"
-                  className="flex items-center space-x-1 px-3 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 whitespace-nowrap"
+                  className="flex items-center space-x-1 px-3 py-1.5 text-xs font-bold text-emerald-800 bg-white hover:bg-emerald-100 rounded-lg border border-emerald-300 whitespace-nowrap shadow-xs"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Standard</span>
@@ -445,13 +465,20 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
               </div>
 
               {standards.length === 0 ? (
-                <p className="text-[11px] text-gray-500">
-                  No standards added yet. Use <span className="font-semibold">Add Standard</span>,
-                  then assign one to each product.
-                </p>
+                <div className="flex items-start gap-2 rounded-lg border border-dashed border-emerald-300 bg-white/70 px-3 py-2.5">
+                  <Layers className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-gray-600">
+                    No standards yet. Click{' '}
+                    <span className="font-semibold text-emerald-800">Add Standard</span> to name the
+                    references this trial compares against, then tick them per product below.
+                  </p>
+                </div>
               ) : (
                 standards.map((value, index) => (
                   <div key={index} className="flex items-center gap-2">
+                    <span className="w-6 h-6 shrink-0 rounded-full bg-emerald-600/10 text-emerald-800 text-[11px] font-bold flex items-center justify-center border border-emerald-200">
+                      {index + 1}
+                    </span>
                     <input
                       type="text"
                       list="trial-standard-options"
@@ -459,7 +486,8 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
                       placeholder="e.g. Untreated Control, or a reference product"
                       value={value}
                       onChange={(e) => updateStandard(index, e.target.value)}
-                      className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
+                      onKeyDown={handleStandardKeyDown}
+                      className="flex-1 min-w-0 px-3 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400"
                     />
                     <button
                       type="button"
@@ -614,42 +642,84 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Standard / Check{' '}
-                    <span className="text-gray-400 font-medium normal-case tracking-normal">
-                      (optional)
+                <div role="group" aria-label={`Standard for Product #${index + 1}`}>
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Standard / Check{' '}
+                      <span className="text-gray-400 font-medium normal-case tracking-normal">
+                        (optional)
+                      </span>
                     </span>
-                  </label>
-                  <select
-                    multiple
-                    size={Math.min(Math.max(standardChoices.length, 3), 6)}
-                    aria-label={`Standard for Product #${index + 1}`}
-                    value={product.standard}
-                    onChange={(e) =>
-                      updateProduct(index, {
-                        standard: Array.from(e.target.selectedOptions, (o) => o.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
-                  >
-                    {/* Keep saved values that are no longer in the list selectable. */}
-                    {product.standard
-                      .filter((s) => !standardChoices.includes(s))
-                      .map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    {standardChoices.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-[10px] text-gray-400">
-                    Ctrl/Cmd-click to select more than one
-                  </p>
+                    {pickableStandardsFor(product).length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                          {product.standard.length} selected
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateProduct(index, { standard: [...pickableStandardsFor(product)] })
+                          }
+                          aria-label={`Select all standards for Product #${index + 1}`}
+                          className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline"
+                        >
+                          All
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateProduct(index, { standard: [] })}
+                          aria-label={`Clear standards for Product #${index + 1}`}
+                          className="text-[10px] font-bold text-gray-500 hover:text-gray-800 hover:underline"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {pickableStandardsFor(product).length === 0 ? (
+                    <div className="flex items-start gap-2 rounded-xl border border-dashed border-gray-300 bg-white px-3 py-2.5">
+                      <Layers className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                      <p className="text-[11px] text-gray-500">
+                        No standards added yet — use{' '}
+                        <span className="font-semibold text-gray-700">Add Standard</span> above to
+                        create the ones this product can be compared against.
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      className="flex flex-wrap gap-2 max-h-44 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2.5"
+                    >
+                      {pickableStandardsFor(product).map((s) => {
+                        const selected = product.standard.includes(s);
+                        return (
+                          <label
+                            key={s}
+                            className={`relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-semibold border cursor-pointer select-none transition-colors ${
+                              selected
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-emerald-50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="absolute inset-0 cursor-pointer opacity-0"
+                              checked={selected}
+                              onChange={() =>
+                                updateProduct(index, {
+                                  standard: selected
+                                    ? product.standard.filter((v) => v !== s)
+                                    : [...product.standard, s],
+                                })
+                              }
+                            />
+                            {selected && <Check className="w-3 h-3 stroke-[3]" />}
+                            <span>{s}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
               </div>
