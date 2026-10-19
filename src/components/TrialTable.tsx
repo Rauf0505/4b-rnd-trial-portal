@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trial, TrialProductRow, UserRole } from '../types/trial';
 import { formatDateDisplay, isPastOrToday } from '../utils/dateUtils';
 import {
@@ -18,6 +18,8 @@ import {
   MapPin,
   User,
   Check,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface TrialTableProps {
@@ -40,6 +42,14 @@ export const TrialTable: React.FC<TrialTableProps> = ({
   onOpenObservation,
   showStandard = true,
 }) => {
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
+
+  // Jump back to the first page whenever the filtered set or page size changes.
+  useEffect(() => {
+    setPage(1);
+  }, [trials, pageSize]);
+
   if (trials.length === 0) {
     return (
       <div className="bg-white rounded-2xl p-12 text-center border border-gray-200 shadow-xs">
@@ -54,10 +64,18 @@ export const TrialTable: React.FC<TrialTableProps> = ({
     );
   }
 
+  const totalTrials = trials.length;
+  const totalPages = Math.max(1, Math.ceil(totalTrials / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageTrials = trials.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const rangeStart = (currentPage - 1) * pageSize + 1;
+  const rangeEnd = Math.min(currentPage * pageSize, totalTrials);
+
   // One row per product, grouped by trial.
   const rows: TrialProductRow[] = flattenToProductRows(trials);
 
-  // Dynamic DAA columns = union of scheduled days across the visible trials.
+  // Dynamic DAA columns = union of scheduled days across all filtered trials,
+  // so the column set stays stable while paging.
   const daySet = new Set<number>();
   trials.forEach((t) => getTrialSchedule(t).forEach((d) => daySet.add(d)));
   const observationDays = Array.from(daySet).sort((a, b) => a - b);
@@ -157,7 +175,7 @@ export const TrialTable: React.FC<TrialTableProps> = ({
           </thead>
 
           <tbody className="divide-y divide-gray-200">
-            {trials.map((trial) => {
+            {pageTrials.map((trial) => {
               const isCompleted = isTrialCompleted(trial, referenceDate);
               const due = isObservationDue(trial, referenceDate);
               const progress = getObservationProgress(trial);
@@ -223,11 +241,18 @@ export const TrialTable: React.FC<TrialTableProps> = ({
                     {product.dose} {product.unit}
                   </td>
                   {showStandard && (
-                    <td className="py-3 px-3 text-gray-700 whitespace-nowrap border-r border-gray-50">
-                      {product.standard ? (
-                        <span className="inline-block px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 text-[10px] font-semibold">
-                          {product.standard}
-                        </span>
+                    <td className="py-3 px-3 text-gray-700 border-r border-gray-50">
+                      {product.standard && product.standard.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 max-w-[220px]">
+                          {product.standard.map((s) => (
+                            <span
+                              key={s}
+                              className="inline-block px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 text-[10px] font-semibold"
+                            >
+                              {s}
+                            </span>
+                          ))}
+                        </div>
                       ) : (
                         <span className="text-gray-300">–</span>
                       )}
@@ -336,12 +361,61 @@ export const TrialTable: React.FC<TrialTableProps> = ({
         </table>
       </div>
 
-      <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-600 gap-2">
-        <div>
-          Showing <strong className="text-gray-900">{trials.length}</strong> trials
-          <span className="text-gray-400"> &bull; {rows.length} product rows</span>
+      <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 flex flex-col gap-3 text-xs text-gray-600">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div>
+            Showing <strong className="text-gray-900">{rangeStart}</strong>–
+            <strong className="text-gray-900">{rangeEnd}</strong> of{' '}
+            <strong className="text-gray-900">{totalTrials}</strong> trials
+            <span className="text-gray-400"> &bull; {rows.length} product rows</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1.5">
+              <span className="text-[11px] text-gray-500">Per page</span>
+              <select
+                aria-label="Trials per page"
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="px-2 py-1 border border-gray-300 rounded-lg bg-white text-xs focus:ring-2 focus:ring-emerald-500"
+              >
+                {[10, 20, 50, 100].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                aria-label="Previous page"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-300 bg-white text-[11px] font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Prev
+              </button>
+              <span className="px-1 text-[11px] text-gray-500 whitespace-nowrap">
+                Page <strong className="text-gray-900">{currentPage}</strong> of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                aria-label="Next page"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-300 bg-white text-[11px] font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center space-x-4 text-[11px]">
+
+        <div className="flex items-center justify-center sm:justify-end space-x-4 text-[11px]">
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
             Completed

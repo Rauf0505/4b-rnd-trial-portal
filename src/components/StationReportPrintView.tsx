@@ -234,7 +234,11 @@ export const StationReportPrintView: React.FC<StationReportPrintViewProps> = ({
                       <td className="border border-gray-300 p-1 text-center">{product.formulation}</td>
                       <td className="border border-gray-300 p-1 text-center">{product.dose} {product.unit}</td>
                       {includeStandard && (
-                        <td className="border border-gray-300 p-1 text-gray-700">{product.standard || '–'}</td>
+                        <td className="border border-gray-300 p-1 text-gray-700">
+                          {product.standard && product.standard.length > 0
+                            ? product.standard.join(', ')
+                            : '–'}
+                        </td>
                       )}
                       <td className="border border-gray-300 p-1 text-center">{product.replications}</td>
                       <td className="border border-gray-300 p-1 text-center">{product.applications}</td>

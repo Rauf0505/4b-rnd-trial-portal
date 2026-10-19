@@ -29,6 +29,7 @@ const RUN = Date.now();
 const SINGLE = `E2E-Single-${RUN}`;
 const MULTI = `E2E-Multi-${RUN}`;
 const DIFF = `E2E-Diff-${RUN}`;
+const MULTI_STD = `E2E-MultiStd-${RUN}`;
 const STD_SINGLE = `E2E-Std-Alpha-${RUN}`;
 const STD_SHARED = `E2E-Std-Shared-${RUN}`;
 const STD_A = `E2E-Std-A-${RUN}`;
@@ -55,8 +56,8 @@ interface ProductInput {
   name: string;
   ai: string;
   dose: string;
-  /** Standard this product picks, one of `opts.standards`. */
-  standard?: string;
+  /** Standards this product picks (any number of `opts.standards`). */
+  standards?: string[];
 }
 
 async function fillTrialForm(
@@ -101,8 +102,10 @@ async function fillTrialForm(
     await page.getByPlaceholder('e.g. Proclaim 05 SG').nth(i).fill(p.name);
     await page.getByPlaceholder('e.g. Emamectin Benzoate').nth(i).fill(p.ai);
     await page.getByPlaceholder('100').nth(i).fill(p.dose);
-    if (p.standard) {
-      await page.getByLabel(`Standard for Product #${i + 1}`, { exact: true }).selectOption(p.standard);
+    if (p.standards && p.standards.length > 0) {
+      await page
+        .getByLabel(`Standard for Product #${i + 1}`, { exact: true })
+        .selectOption(p.standards);
     }
   }
 
@@ -176,6 +179,45 @@ test('dashboard loads with seeded trials and consistent KPIs', async ({ page }) 
   expect(headers.indexOf(STANDARD_HEADER)).toBe(headers.indexOf('Rep.') - 1);
 });
 
+// ── 1b. table pagination ────────────────────────────────────────────────────
+
+test('paginates the table and lets the page size be changed', async ({ page }) => {
+  await gotoApp(page);
+
+  const perPage = page.getByLabel('Trials per page');
+  await expect(perPage).toHaveValue('10');
+  await expect(perPage.locator('option')).toHaveCount(4);
+
+  const total = await kpiNumber(page, 'Total Trials');
+  const expectedPages = Math.max(1, Math.ceil(total / 10));
+  const firstPageEnd = Math.min(10, total);
+
+  await expect(page.getByText(`Page 1 of ${expectedPages}`)).toBeVisible();
+  await expect(
+    page.getByText(new RegExp(`Showing 1–${firstPageEnd} of ${total} trials`))
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+
+  // 100 trials per page collapses everything onto a single page.
+  await perPage.selectOption('100');
+  await expect(page.getByText('Page 1 of 1')).toBeVisible();
+  await expect(page.getByText(new RegExp(`Showing 1–${total} of ${total} trials`))).toBeVisible();
+
+  await perPage.selectOption('10');
+  await expect(page.getByText(`Page 1 of ${expectedPages}`)).toBeVisible();
+
+  if (expectedPages > 1) {
+    await page.getByRole('button', { name: 'Next page' }).click();
+    await expect(page.getByText(`Page 2 of ${expectedPages}`)).toBeVisible();
+    await expect(
+      page.getByText(new RegExp(`Showing ${firstPageEnd + 1}–${total} of ${total} trials`))
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Previous page' }).click();
+    await expect(page.getByText(`Page 1 of ${expectedPages}`)).toBeVisible();
+  }
+});
+
 // ── 2. create a single-product trial ────────────────────────────────────────
 
 test('creates a single-product trial with a 0 DAA baseline that is due today', async ({
@@ -197,7 +239,7 @@ test('creates a single-product trial with a 0 DAA baseline that is due today', a
     pest: `E2E Pest ${RUN}`,
     standards: [STD_SINGLE],
     products: [
-      { name: `E2E Prod Single ${RUN}`, ai: 'Alpha Ingredient', dose: '100', standard: STD_SINGLE },
+      { name: `E2E Prod Single ${RUN}`, ai: 'Alpha Ingredient', dose: '100', standards: [STD_SINGLE] },
     ],
   });
 
@@ -250,8 +292,8 @@ test('creates a multi-product trial with one row per product, all sharing one St
     pest: `E2E Multi Pest ${RUN}`,
     standards: [STD_SHARED],
     products: [
-      { name: PROD_A, ai: 'Alpha AI', dose: '120', standard: STD_SHARED },
-      { name: PROD_B, ai: 'Beta AI', dose: '240', standard: STD_SHARED },
+      { name: PROD_A, ai: 'Alpha AI', dose: '120', standards: [STD_SHARED] },
+      { name: PROD_B, ai: 'Beta AI', dose: '240', standards: [STD_SHARED] },
     ],
   });
 
@@ -277,8 +319,8 @@ test('lets each product carry a different Standard', async ({ page }) => {
     pest: `E2E Diff Pest ${RUN}`,
     standards: [STD_A, STD_B],
     products: [
-      { name: `E2E Diff P1 ${RUN}`, ai: 'Gamma AI', dose: '90', standard: STD_A },
-      { name: `E2E Diff P2 ${RUN}`, ai: 'Delta AI', dose: '180', standard: STD_B },
+      { name: `E2E Diff P1 ${RUN}`, ai: 'Gamma AI', dose: '90', standards: [STD_A] },
+      { name: `E2E Diff P2 ${RUN}`, ai: 'Delta AI', dose: '180', standards: [STD_B] },
     ],
   });
 
@@ -288,6 +330,35 @@ test('lets each product carry a different Standard', async ({ page }) => {
   const body = page.locator('tbody');
   await expect(body.getByText(STD_A, { exact: true })).toHaveCount(1);
   await expect(body.getByText(STD_B, { exact: true })).toHaveCount(1);
+});
+
+// ── 4c. one product can carry several Standards ─────────────────────────────
+
+test('lets a single product carry multiple Standards', async ({ page }) => {
+  await gotoApp(page);
+  await openTrialForm(page);
+  await fillTrialForm(page, {
+    station: 'Hyderabad',
+    category: 'Fungicide',
+    name: MULTI_STD,
+    pest: `E2E MultiStd Pest ${RUN}`,
+    standards: [STD_A, STD_B],
+    products: [
+      {
+        name: `E2E MultiStd P1 ${RUN}`,
+        ai: 'Epsilon AI',
+        dose: '150',
+        standards: [STD_A, STD_B],
+      },
+    ],
+  });
+
+  await filterTo(page, MULTI_STD);
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+
+  const row = page.locator('tbody tr').first();
+  await expect(row.getByText(STD_A, { exact: true })).toBeVisible();
+  await expect(row.getByText(STD_B, { exact: true })).toBeVisible();
 });
 
 // ── 5. observations + date-driven status transitions ────────────────────────
@@ -459,10 +530,10 @@ test('edits an existing trial and persists the change', async ({ page }) => {
   await row.getByTitle('Edit Trial Information').click();
   await expect(page.getByRole('heading', { name: 'Edit R&D Field Trial' })).toBeVisible();
 
-  // The per-product Standard dropdown is prefilled from the saved value.
+  // The per-product Standard picker is prefilled from the saved value.
   await expect(
     page.getByLabel('Standard for Product #1', { exact: true })
-  ).toHaveValue(STD_SINGLE);
+  ).toHaveValues([STD_SINGLE]);
 
   const newName = `${SINGLE}-EDITED`;
   await page.getByPlaceholder('e.g. Bio-efficacy of Emamectin on Spodoptera').fill(newName);

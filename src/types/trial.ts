@@ -54,11 +54,11 @@ export interface TrialProduct {
   replications: number;
   applications: number;
   /**
-   * Optional standard / check reference against which this product is
-   * compared. Free text per product — products may share the same value or
-   * each carry their own.
+   * Optional standard / check references against which this product is
+   * compared. Each product may carry several standards (or none); products
+   * may share values or each carry their own.
    */
-  standard: string;
+  standard: string[];
 }
 
 export interface ObservationRecord {

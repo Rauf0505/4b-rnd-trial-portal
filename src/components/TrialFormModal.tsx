@@ -60,6 +60,7 @@ const COMMON_FORMULATIONS = [
   'GR (Granule)',
   'OD (Oil Dispersion)',
   'SP (Soluble Powder)',
+  'DF (Dry Flowable)',
   'WG (Water Dispersible Granule)',
 ];
 
@@ -82,7 +83,7 @@ const emptyProduct = (position: number): TrialProduct => ({
   unit: 'ml/acre',
   replications: 3,
   applications: 1,
-  standard: '',
+  standard: [],
 });
 
 export const TrialFormModal: React.FC<TrialFormModalProps> = ({
@@ -102,7 +103,7 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
   const [customCrop, setCustomCrop] = useState('');
   const [pestOrWeed, setPestOrWeed] = useState('');
   const [products, setProducts] = useState<TrialProduct[]>([emptyProduct(0)]);
-  // Standards / Checks for this trial; each product picks one of these.
+  // Standards / Checks for this trial; each product picks one or more of these.
   const [standards, setStandards] = useState<string[]>([]);
   const [conductedDate, setConductedDate] = useState(formatISODate(new Date()));
   const [harvestStageDate, setHarvestStageDate] = useState('');
@@ -137,7 +138,12 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
       // Rebuild the standards list from the values saved on the products.
       setStandards(
         Array.from(
-          new Set(editableProducts.map((p) => p.standard.trim()).filter(Boolean))
+          new Set(
+            editableProducts
+              .flatMap((p) => p.standard ?? [])
+              .map((s) => s.trim())
+              .filter(Boolean)
+          )
         )
       );
       setConductedDate(editingTrial.conductedDate);
@@ -186,13 +192,13 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
   const removeStandard = (index: number) => {
     const removed = standards[index];
     setStandards((prev) => prev.filter((_, i) => i !== index));
-    // A product still pointing at the removed standard falls back to "none".
+    // Any product still pointing at the removed standard drops it.
     setProducts((prev) =>
-      prev.map((p) => (p.standard === removed ? { ...p, standard: '' } : p))
+      prev.map((p) => ({ ...p, standard: (p.standard ?? []).filter((s) => s !== removed) }))
     );
   };
 
-  // Clean, de-duplicated options for each product's Standard dropdown.
+  // Clean, de-duplicated options for each product's Standard picker.
   const standardChoices = Array.from(
     new Set(standards.map((s) => s.trim()).filter(Boolean))
   );
@@ -231,7 +237,11 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
       insecticideSubCategory: category === 'Insecticide' ? insecticideSubCategory : null,
       crop: finalCrop,
       pestOrWeed: pestOrWeed.trim(),
-      products: products.map((p, i) => ({ ...p, position: i, standard: p.standard.trim() })),
+      products: products.map((p, i) => ({
+        ...p,
+        position: i,
+        standard: (p.standard ?? []).map((s) => s.trim()).filter(Boolean),
+      })),
       conductedDate,
       harvestStageDate: showHarvest ? harvestStageDate : null,
       fieldLocation: fieldLocation.trim(),
@@ -414,13 +424,13 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
             </div>
             {errors.products && <p className="text-[11px] text-red-600">{errors.products}</p>}
 
-            {/* Standards / Checks — each product picks one below */}
+            {/* Standards / Checks — each product picks one or more below */}
             <div className="border border-emerald-200 rounded-xl p-3.5 bg-emerald-50/40 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                   Standards / Checks{' '}
                   <span className="text-gray-400 font-medium normal-case tracking-normal">
-                    (products pick one)
+                    (products pick one or more)
                   </span>
                 </label>
                 <button
@@ -612,22 +622,34 @@ export const TrialFormModal: React.FC<TrialFormModalProps> = ({
                     </span>
                   </label>
                   <select
+                    multiple
+                    size={Math.min(Math.max(standardChoices.length, 3), 6)}
                     aria-label={`Standard for Product #${index + 1}`}
                     value={product.standard}
-                    onChange={(e) => updateProduct(index, { standard: e.target.value })}
+                    onChange={(e) =>
+                      updateProduct(index, {
+                        standard: Array.from(e.target.selectedOptions, (o) => o.value),
+                      })
+                    }
                     className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="">— None —</option>
-                    {/* Keep a saved value that is no longer in the list selectable. */}
-                    {product.standard && !standardChoices.includes(product.standard) && (
-                      <option value={product.standard}>{product.standard}</option>
-                    )}
+                    {/* Keep saved values that are no longer in the list selectable. */}
+                    {product.standard
+                      .filter((s) => !standardChoices.includes(s))
+                      .map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
                     {standardChoices.map((s) => (
                       <option key={s} value={s}>
                         {s}
                       </option>
                     ))}
                   </select>
+                  <p className="mt-1 text-[10px] text-gray-400">
+                    Ctrl/Cmd-click to select more than one
+                  </p>
                 </div>
 
               </div>

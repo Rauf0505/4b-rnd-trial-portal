@@ -64,7 +64,7 @@ function createTrial(data: SeedInput): Trial {
   const products: TrialProduct[] = data.products.map((p, index) => ({
     position: index,
     ...p,
-    standard: p.standard ?? 'Untreated Control',
+    standard: p.standard ? [p.standard] : ['Untreated Control'],
   }));
 
   return {

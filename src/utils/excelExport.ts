@@ -193,7 +193,9 @@ function buildRowValues(
       case 'productName':
         return product.productName;
       case 'standard':
-        return product.standard || '-';
+        return product.standard && product.standard.length > 0
+          ? product.standard.join(', ')
+          : '-';
       case 'activeIngredient':
         return product.activeIngredient;
       case 'formulation':
@@ -399,7 +401,10 @@ function populateOverviewSheet(
       crop: trial.crop,
       pestOrWeed: trial.pestOrWeed,
       productName: product.productName,
-      standard: product.standard || '-',
+      standard:
+        product.standard && product.standard.length > 0
+          ? product.standard.join(', ')
+          : '-',
       activeIngredient: product.activeIngredient,
       formulation: product.formulation,
       dose: String(product.dose ?? ''),

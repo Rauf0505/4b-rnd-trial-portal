@@ -190,8 +190,10 @@ export default function App() {
     const set = new Set<string>();
     trials.forEach((t) =>
       t.products.forEach((p) => {
-        const value = p.standard.trim();
-        if (value) set.add(value);
+        (p.standard ?? []).forEach((value) => {
+          const trimmed = value.trim();
+          if (trimmed) set.add(trimmed);
+        });
       })
     );
     return Array.from(set).sort();
@@ -245,7 +247,7 @@ export default function App() {
               (p) =>
                 p.productName.toLowerCase().includes(q) ||
                 p.activeIngredient.toLowerCase().includes(q) ||
-                (p.standard && p.standard.toLowerCase().includes(q))
+                (p.standard ?? []).some((s) => s.toLowerCase().includes(q))
             ) ||
             (t.remarks && t.remarks.toLowerCase().includes(q));
 
@@ -488,7 +490,7 @@ export default function App() {
                 unit: t.unit || '',
                 replications: t.replications ?? 3,
                 applications: t.applications ?? 1,
-                standard: '',
+                standard: [],
               },
             ];
         const schedule =

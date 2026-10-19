@@ -42,7 +42,7 @@ interface ProductRow {
   unit: string | null;
   replications: number | null;
   applications: number | null;
-  standard: string | null;
+  standard: string[] | null;
 }
 
 interface ObservationRow {
@@ -127,7 +127,7 @@ function mapProduct(row: ProductRow): TrialProduct {
     unit: row.unit ?? '',
     replications: row.replications ?? 3,
     applications: row.applications ?? 1,
-    standard: row.standard ?? '',
+    standard: row.standard ?? [],
   };
 }
 
@@ -272,7 +272,7 @@ function buildProductRows(trialId: string, products: TrialProduct[]) {
     unit: p.unit ?? '',
     replications: Number(p.replications) || 0,
     applications: Number(p.applications) || 0,
-    standard: p.standard ?? '',
+    standard: p.standard ?? [],
   }));
 }
 

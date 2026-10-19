@@ -11,9 +11,10 @@ Sahiwal, Multan, Lahore and Hyderabad research stations.
   - Phytotoxicity: `0, 1, 3, 7, 10, 12, 14, 21 DAA`
   - Foliar insecticide: `0, 1, 3, 7, 14, 21, 28 DAA`
   - Fertilizer / Growth also accepts a manually entered **harvesting stage** date.
-- **Multiple products per trial** — each with brand, active ingredient, formulation, dose, unit, replications and applications.
-- **Standards / Checks** — add any number of standards to a trial with the **Add Standard** button (also accepts free text with suggestions from values already in use), then each product row picks one from its own dropdown, so products may share or differ.
+- **Multiple products per trial** — each with brand, active ingredient, formulation (e.g. SC, WDG, **DF (Dry Flowable)**), dose, unit, replications and applications.
+- **Standards / Checks** — add any number of standards to a trial with the **Add Standard** button (also accepts free text with suggestions from values already in use). Each product row then picks **one or more** from its own multi-select, so products may share, differ, or carry several standards each.
 - **Filtering** by station, status, category, sub-category, crop, pest/weed, product and staff.
+- **Pagination** on the trials table with a 10 / 20 / 50 / 100 trials-per-page selector; Excel exports and the print report always cover every filtered trial, not just the visible page.
 - **Excel exports** with dynamic DAA columns and a consolidated **Dashboard Overview** sheet (all trials, all locations). Every export (and the print report) can be generated **with or without** the Standard / Check column from its dropdown; the on-screen table has a show/hide toggle.
 - Print-friendly station status reports.
 - All data stored in **Supabase** (cloud PostgreSQL).
@@ -23,6 +24,18 @@ Sahiwal, Multan, Lahore and Hyderabad research stations.
 ### 1. Create the database
 
 Run [supabase/schema.sql](supabase/schema.sql) in your Supabase project's SQL editor.
+
+If your project already had the `trial_products` table from an earlier version,
+run this once to upgrade `standard` to a multi-value column:
+
+```sql
+alter table public.trial_products alter column standard drop default;
+alter table public.trial_products
+  alter column standard type text[]
+  using (case when standard is null or btrim(standard) = ''
+              then '{}'::text[] else array[standard] end);
+alter table public.trial_products alter column standard set default '{}'::text[];
+```
 
 ### 2. Configure environment
 
@@ -62,8 +75,10 @@ npm run test:e2e:ui               # interactive UI runner
 ```
 
 - Specs live in `e2e/`; they create records named `E2E-*`, exercise the full flow
-  (create → observe → export → filter → edit → delete), and remove those records
-  again. A final assertion confirms the database is back to its seeded baseline.
+  (create → observe → export → filter → paginate → edit → delete, including
+  multi-product and multiple-standards-per-product cases), and remove those
+  records again. A final assertion confirms the database is back to its seeded
+  baseline.
 - The Playwright-managed dev server uses port **3100** (`npm run dev:e2e`) so it
   never collides with a normal `npm run dev` on port 3000.
 - `npm run lint:e2e` type-checks the test sources.

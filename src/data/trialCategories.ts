@@ -84,7 +84,7 @@ export function flattenToProductRows(trials: Trial[]): TrialProductRow[] {
               unit: '',
               replications: 0,
               applications: 0,
-              standard: '',
+              standard: [],
             } as TrialProductRow['product'],
           ];
     products.forEach((product, index) => {
