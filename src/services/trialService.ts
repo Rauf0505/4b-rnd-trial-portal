@@ -10,6 +10,7 @@ import {
 import { requireSupabase } from '../lib/supabase';
 import { getObservationSchedule, hasHarvestStage } from '../data/trialCategories';
 import { calculateObservationDates } from '../utils/dateUtils';
+import { normalizeStandards } from '../utils/standards';
 
 // ── Database row shapes (snake_case) ────────────────────────────────────────
 interface TrialRow {
@@ -127,7 +128,7 @@ function mapProduct(row: ProductRow): TrialProduct {
     unit: row.unit ?? '',
     replications: row.replications ?? 3,
     applications: row.applications ?? 1,
-    standard: row.standard ?? [],
+    standard: normalizeStandards(row.standard),
   };
 }
 
@@ -272,7 +273,7 @@ function buildProductRows(trialId: string, products: TrialProduct[]) {
     unit: p.unit ?? '',
     replications: Number(p.replications) || 0,
     applications: Number(p.applications) || 0,
-    standard: p.standard ?? [],
+    standard: normalizeStandards(p.standard),
   }));
 }
 
